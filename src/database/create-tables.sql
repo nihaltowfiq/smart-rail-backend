@@ -36,16 +36,15 @@ CREATE TABLE fare_rules (
   price_per_km DECIMAL(10,2) NOT NULL
 );
 
+
 CREATE TABLE schedules (
   schedule_id INT AUTO_INCREMENT PRIMARY KEY,
   train_id INT,
   route_id INT,
-  fare_id INT,
   departure_time TIME,
   arrival_time TIME,
   FOREIGN KEY (train_id) REFERENCES trains(train_id),
-  FOREIGN KEY (route_id) REFERENCES routes(route_id),
-  FOREIGN KEY (fare_id) REFERENCES fare_rules(fare_id)
+  FOREIGN KEY (route_id) REFERENCES routes(route_id)
 );
 
 CREATE TABLE train_coaches (
@@ -56,21 +55,24 @@ CREATE TABLE train_coaches (
   FOREIGN KEY (train_id) REFERENCES trains(train_id)
 );
 
+
 CREATE TABLE seats (
   seat_id INT AUTO_INCREMENT PRIMARY KEY,
   coach_id INT,
   seat_number INT,
-  is_booked BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (coach_id) REFERENCES train_coaches(coach_id)
 );
+
 
 CREATE TABLE bookings (
   booking_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT,
   schedule_id INT,
   journey_date DATE,
+  class_type ENUM('AC','NON_AC') NOT NULL,
+  seat_count INT NOT NULL DEFAULT 1,
   total_amount DECIMAL(10,2),
-  status ENUM("PENDING",'CONFIRMED','CANCELLED',"FAILED") DEFAULT 'CONFIRMED',
+  status ENUM('PENDING','CONFIRMED','CANCELLED','FAILED') DEFAULT 'PENDING',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(user_id),
   FOREIGN KEY (schedule_id) REFERENCES schedules(schedule_id)
@@ -89,7 +91,7 @@ CREATE TABLE payments (
   booking_id INT,
   transaction_id VARCHAR(100),
   amount DECIMAL(10,2),
-  status ENUM('SUCCESS','FAILED','PENDING') DEFAULT 'SUCCESS',
+  status ENUM('SUCCESS','FAILED','PENDING') DEFAULT 'PENDING',
   payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (booking_id) REFERENCES bookings(booking_id)
 );
@@ -99,7 +101,8 @@ CREATE TABLE train_running_days (
   train_id INT,
   day_of_week ENUM('SUN','MON','TUE','WED','THU','FRI','SAT'),
   is_off BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (train_id) REFERENCES trains(train_id)
+  FOREIGN KEY (train_id) REFERENCES trains(train_id),
+  UNIQUE KEY unique_train_day (train_id, day_of_week)
 );
 
 -- 🔗 RELATIONSHIP SUMMARY
