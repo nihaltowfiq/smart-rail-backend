@@ -10,6 +10,7 @@ export function successResponse<T>(
     message,
     data,
     status,
+    error: [],
   };
 }
 
@@ -22,5 +23,6 @@ export function errorResponse(
     message,
     data: null,
     status,
+    error: [message],
   };
 }

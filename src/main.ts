@@ -3,19 +3,21 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { testDbConnection } from './config/database.config';
-import { HttpExceptionFilter } from './libs/filters/http-exception.filters';
+import { HttpExceptionFilter } from './libs/exception.filter';
+import { ResponseInterceptor } from './libs/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.setGlobalPrefix('/api');
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
     }),
   );
-
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   const config = new DocumentBuilder()
     .setTitle('SMART-RAIL API')
@@ -25,8 +27,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  await testDbConnection(); // 👈 ADD THIS
 
+  await testDbConnection();
   await app.listen(process.env.PORT ?? 3100);
 }
 

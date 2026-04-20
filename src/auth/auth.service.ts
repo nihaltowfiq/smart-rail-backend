@@ -32,7 +32,6 @@ export class AuthService {
     phone: string,
     password: string,
   ): Promise<{
-    message: string;
     token: string;
     user: { id: number; phone: string; role: string };
   }> {
@@ -63,7 +62,6 @@ export class AuthService {
     });
 
     return {
-      message: 'Login successful',
       token,
       user: {
         id: user.user_id,
