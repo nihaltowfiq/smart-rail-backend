@@ -4,4 +4,5 @@ export interface User {
   password: string;
   role: 'user' | 'admin';
   created_at: Date;
+  name: string;
 }

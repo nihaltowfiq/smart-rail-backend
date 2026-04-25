@@ -6,7 +6,8 @@ CREATE TABLE users (
   phone VARCHAR(15) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   role ENUM('user','admin') DEFAULT 'user',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  name VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE stations (

@@ -16,6 +16,11 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.enableCors({
+    origin: ['http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true,
+  });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
 

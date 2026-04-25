@@ -13,7 +13,7 @@ export class AuthController {
   @ApiOperation({ summary: 'User Signup' })
   @ApiBody({ type: SignupDto })
   signup(@Body() dto: SignupDto) {
-    return this.authService.signup(dto.phone, dto.password);
+    return this.authService.signup(dto.phone, dto.password, dto.name);
   }
 
   @Post('signin')

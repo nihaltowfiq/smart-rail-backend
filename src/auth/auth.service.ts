@@ -8,7 +8,14 @@ import { JwtPayload, User } from 'src/libs/types';
 export class AuthService {
   constructor(private db: DbService) {}
 
-  async signup(phone: string, password: string): Promise<{ message: string }> {
+  async signup(
+    phone: string,
+    password: string,
+    name: string,
+  ): Promise<{
+    token: string;
+    user: { id: number; phone: string; role: string; name: string };
+  }> {
     const users = await this.db.query<User[]>(
       'SELECT * FROM users WHERE phone = ?',
       [phone],
@@ -20,12 +27,36 @@ export class AuthService {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    await this.db.query('INSERT INTO users (phone, password) VALUES (?, ?)', [
-      phone,
-      hashed,
-    ]);
+    await this.db.query(
+      'INSERT INTO users (phone, password, name) VALUES (?, ?, ?)',
+      [phone, hashed, name],
+    );
 
-    return { message: 'Signup successful' };
+    const all_users = await this.db.query<User[]>(
+      'SELECT * FROM users WHERE phone = ?',
+      [phone],
+    );
+
+    const user = all_users[0];
+
+    const payload: JwtPayload = {
+      user_id: user.user_id,
+      role: user.role,
+    };
+
+    const token = jwt.sign(payload, 'SECRET_KEY', {
+      expiresIn: '7d',
+    });
+
+    return {
+      token,
+      user: {
+        name: user.name,
+        id: user.user_id,
+        phone: user.phone,
+        role: user.role,
+      },
+    };
   }
 
   async signin(
@@ -33,8 +64,10 @@ export class AuthService {
     password: string,
   ): Promise<{
     token: string;
-    user: { id: number; phone: string; role: string };
+    user: { id: number; phone: string; role: string; name: string };
   }> {
+    console.log({ phone, password });
+
     const users = await this.db.query<User[]>(
       'SELECT * FROM users WHERE phone = ?',
       [phone],
@@ -58,12 +91,13 @@ export class AuthService {
     };
 
     const token = jwt.sign(payload, 'SECRET_KEY', {
-      expiresIn: '1d',
+      expiresIn: '7d',
     });
 
     return {
       token,
       user: {
+        name: user.name,
         id: user.user_id,
         phone: user.phone,
         role: user.role,

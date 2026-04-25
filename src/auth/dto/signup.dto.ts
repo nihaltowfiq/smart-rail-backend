@@ -3,6 +3,13 @@ import { IsNotEmpty, Matches, MinLength } from 'class-validator';
 
 export class SignupDto {
   @ApiProperty({
+    example: 'User',
+  })
+  @IsNotEmpty()
+  @MinLength(5)
+  name: string;
+
+  @ApiProperty({
     example: '01712345678',
     description: 'Bangladeshi phone number',
   })
