@@ -8,14 +8,7 @@ import { JwtPayload, User } from 'src/libs/types';
 export class AuthService {
   constructor(private db: DbService) {}
 
-  async signup(
-    phone: string,
-    password: string,
-    name: string,
-  ): Promise<{
-    token: string;
-    user: { id: number; phone: string; role: string; name: string };
-  }> {
+  async signup(phone: string, password: string, name: string): Promise<User> {
     const users = await this.db.query<User[]>(
       'SELECT * FROM users WHERE phone = ?',
       [phone],
@@ -50,22 +43,14 @@ export class AuthService {
 
     return {
       token,
-      user: {
-        name: user.name,
-        id: user.user_id,
-        phone: user.phone,
-        role: user.role,
-      },
+      name: user.name,
+      user_id: user.user_id,
+      phone: user.phone,
+      role: user.role,
     };
   }
 
-  async signin(
-    phone: string,
-    password: string,
-  ): Promise<{
-    token: string;
-    user: { id: number; phone: string; role: string; name: string };
-  }> {
+  async signin(phone: string, password: string): Promise<User> {
     console.log({ phone, password });
 
     const users = await this.db.query<User[]>(
@@ -79,7 +64,7 @@ export class AuthService {
 
     const user = users[0];
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password as string);
 
     if (!isMatch) {
       throw new BadRequestException('Invalid credentials');
@@ -96,12 +81,10 @@ export class AuthService {
 
     return {
       token,
-      user: {
-        name: user.name,
-        id: user.user_id,
-        phone: user.phone,
-        role: user.role,
-      },
+      name: user.name,
+      user_id: user.user_id,
+      phone: user.phone,
+      role: user.role,
     };
   }
 }

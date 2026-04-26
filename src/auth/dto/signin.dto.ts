@@ -6,11 +6,11 @@ export class SigninDto {
     example: '01712345678',
   })
   @IsNotEmpty()
-  phone: string;
+  phone!: string;
 
   @ApiProperty({
     example: '123456',
   })
   @IsNotEmpty()
-  password: string;
+  password!: string;
 }

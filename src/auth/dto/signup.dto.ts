@@ -7,7 +7,7 @@ export class SignupDto {
   })
   @IsNotEmpty()
   @MinLength(5)
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: '01712345678',
@@ -15,7 +15,7 @@ export class SignupDto {
   })
   @IsNotEmpty()
   @Matches(/^01[3-9]\d{8}$/)
-  phone: string;
+  phone!: string;
 
   @ApiProperty({
     example: '123456',
@@ -23,5 +23,5 @@ export class SignupDto {
   })
   @IsNotEmpty()
   @MinLength(6)
-  password: string;
+  password!: string;
 }
