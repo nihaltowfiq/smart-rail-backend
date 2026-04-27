@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { testDbConnection } from './config/database.config';
 import { HttpExceptionFilter } from './libs/exception.filter';
@@ -32,6 +33,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  app.use(cookieParser());
 
   await testDbConnection();
   await app.listen(process.env.PORT ?? 3100);

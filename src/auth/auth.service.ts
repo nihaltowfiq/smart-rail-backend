@@ -35,12 +35,15 @@ export class AuthService {
     const payload: JwtPayload = {
       user_id: user.user_id,
       role: user.role,
+      name: user.name,
+      phone: user.phone,
     };
 
     const token = jwt.sign(payload, 'SECRET_KEY', {
       expiresIn: '7d',
     });
 
+    console.log(token);
     return {
       token,
       name: user.name,
@@ -73,6 +76,8 @@ export class AuthService {
     const payload: JwtPayload = {
       user_id: user.user_id,
       role: user.role,
+      name: user.name,
+      phone: user.phone,
     };
 
     const token = jwt.sign(payload, 'SECRET_KEY', {
