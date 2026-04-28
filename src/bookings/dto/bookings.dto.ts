@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNumber,
 } from 'class-validator';
 
 export enum ClassType {
@@ -26,4 +27,7 @@ export class CreateBookingDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(5)
   seatIds!: number[];
+
+  @IsNumber()
+  totalAmount!: number;
 }

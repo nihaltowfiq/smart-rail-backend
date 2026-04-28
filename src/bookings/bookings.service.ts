@@ -3,10 +3,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { db } from 'src/config/database.config';
+import { CreateBookingDto } from './dto/bookings.dto';
 
 @Injectable()
 export class BookingsService {
-  async createBooking(dto, userId: number) {
+  async createBooking(dto: CreateBookingDto, userId: number) {
     if (dto.seatIds.length > 5) {
       throw new Error('Max 5 seats allowed');
     }
@@ -36,7 +37,7 @@ export class BookingsService {
         `
           INSERT INTO bookings
           (user_id, schedule_id, journey_date, class_type, seat_count, total_amount, status)
-          VALUES (?, ?, ?, ?, ?, ?, 'CONFIRMED')
+          VALUES (?, ?, ?, ?, ?, ?, 'PENDING')
         `,
         [
           userId,
@@ -44,7 +45,7 @@ export class BookingsService {
           dto.journeyDate,
           dto.classType,
           dto.seatIds.length,
-          0,
+          dto.totalAmount,
         ],
       );
 
