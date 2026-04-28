@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { DbService } from 'src/database/db.service';
 import { SearchTrainDto } from './dto/search-train.dto';
@@ -11,6 +13,29 @@ function getDayOfWeek(date: string): string {
 export class TrainsService {
   constructor(private db: DbService) {}
 
+  private groupSeats(rows: any[]) {
+    const map = {};
+
+    for (const r of rows) {
+      if (!map[r.coach_id]) {
+        map[r.coach_id] = {
+          coachId: r.coach_id,
+          coachLabel: r.coach_label,
+          classType: r.class_type,
+          seats: [],
+        };
+      }
+
+      map[r.coach_id].seats.push({
+        seatId: r.seat_id,
+        number: r.seat_number,
+        status: r.status,
+      });
+    }
+
+    return Object.values(map);
+  }
+
   async search(dto: SearchTrainDto) {
     const dayOfWeek = getDayOfWeek(dto.date);
 
@@ -21,6 +46,7 @@ export class TrainsService {
       t.train_number,
       s.departure_time,
       s.arrival_time,
+      s.schedule_id,
       src.station_name AS from_station,
       dest.station_name AS to_station
     FROM schedules s
@@ -40,5 +66,46 @@ export class TrainsService {
   `;
 
     return this.db.query(query, [dto.from, dto.to, dto.class, dayOfWeek]);
+  }
+
+  async getSeats(scheduleId: number, date: string, classType: string) {
+    const query = `
+        SELECT 
+          tc.coach_id,
+          tc.coach_label,
+          tc.class_type,
+          s.seat_id,
+          s.seat_number,
+      CASE 
+        WHEN b.booking_id IS NULL THEN 'AVAILABLE'
+        ELSE 'BOOKED'
+      END AS status
+
+    FROM train_coaches tc
+    JOIN seats s ON s.coach_id = tc.coach_id
+
+    LEFT JOIN booking_seats bs ON bs.seat_id = s.seat_id
+    LEFT JOIN bookings b ON b.booking_id = bs.booking_id
+      AND b.schedule_id = ?
+      AND b.journey_date = ?
+      AND b.status = 'CONFIRMED'
+
+    WHERE 
+      tc.train_id = (
+        SELECT train_id FROM schedules WHERE schedule_id = ?
+      )
+      AND tc.class_type = ?
+
+    ORDER BY tc.coach_id, s.seat_number;
+
+    `;
+    const rows = await this.db.query<any[]>(query, [
+      scheduleId,
+      date,
+      scheduleId,
+      classType,
+    ]);
+
+    return this.groupSeats(rows);
   }
 }
