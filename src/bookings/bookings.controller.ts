@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Body,
   Controller,
+  Get,
+  Param,
+  ParseIntPipe,
   Post,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -20,25 +20,21 @@ export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Post('/')
-  @ApiOperation({ summary: 'Search Trains' })
-  // @UsePipes(new ValidationPipe({ whitelist: true }))
+  @ApiOperation({ summary: 'Ticket Bookings' })
   async createBooking(@Body() dto: CreateBookingDto, @GetUser() user) {
-    // Assumes you have auth middleware that sets req.user
-    const userId = user?.user_id;
+    const userId = user?.user_id as number;
     return this.bookingsService.createBooking(dto, userId);
   }
 
-  @Post('/test')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
-  async makeBooking(@Body() dto: CreateBookingDto, @GetUser() user) {
-    // Assumes you have auth middleware that sets req.user
-    const userId = user?.id;
+  @Get('/:bookingId')
+  @ApiOperation({ summary: 'Get booking details by bookingId' })
+  async getBooking(@Param('bookingId', ParseIntPipe) bookingId: number) {
+    return this.bookingsService.getBookingDetails(bookingId);
+  }
 
-    console.log(userId);
-    if (!userId) {
-      throw new Error('Unauthorized');
-    }
-
-    return this.bookingsService.createBooking(dto, userId);
+  @Post('/payment/:bookingId')
+  @ApiOperation({ summary: 'Make payment for a booking' })
+  async makePayment(@Param('bookingId', ParseIntPipe) bookingId: number) {
+    return this.bookingsService.makePayment(bookingId);
   }
 }

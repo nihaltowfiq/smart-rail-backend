@@ -49,16 +49,13 @@ export class TrainsService {
       s.arrival_time,
       src.station_name AS from_station,
       dest.station_name AS to_station,
-
       tc.class_type,
 
-      -- FIX: wrap fare calculation
       MAX(r.distance_km * fr.price_per_km) AS fare,
 
       COUNT(DISTINCT st.seat_id) AS total_seat_count,
 
-      COUNT(DISTINCT st.seat_id) 
-      - COUNT(DISTINCT bs.seat_id) AS total_available_seats_count
+      COUNT(DISTINCT st.seat_id) - COUNT(DISTINCT bs.seat_id) AS total_available_seats_count
 
     FROM schedules s
     JOIN trains t ON t.train_id = s.train_id

@@ -43,7 +43,6 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    console.log(token);
     return {
       token,
       name: user.name,
@@ -54,8 +53,6 @@ export class AuthService {
   }
 
   async signin(phone: string, password: string): Promise<User> {
-    console.log({ phone, password });
-
     const users = await this.db.query<User[]>(
       'SELECT * FROM users WHERE phone = ?',
       [phone],

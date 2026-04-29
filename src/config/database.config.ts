@@ -15,7 +15,7 @@ export async function testDbConnection() {
     const connection = await db.getConnection();
     console.log('✅ MySQL Connected Successfully');
     connection.release();
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ MySQL Connection Failed:', error?.message);
   }
 }
