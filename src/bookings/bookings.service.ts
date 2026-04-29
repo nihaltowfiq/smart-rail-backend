@@ -236,7 +236,6 @@ export class BookingsService {
 
     console.log(params);
 
-    // ✅ Dynamic WHERE condition
     let extraCondition = '';
 
     if (status === 'UPCOMING') {
@@ -245,7 +244,6 @@ export class BookingsService {
       extraCondition = `AND b.status = 'PENDING'`;
     }
 
-    // ✅ Main query (IMPORTANT: no LIMIT here for grouping correctness)
     const [rows]: any = await db.query(
       `
       SELECT 
@@ -295,7 +293,6 @@ export class BookingsService {
       [userId],
     );
 
-    // ✅ Group by booking_id
     const map = new Map<number, any>();
 
     for (const row of rows) {
@@ -337,10 +334,8 @@ export class BookingsService {
 
     const allBookings = Array.from(map.values());
 
-    // ✅ Pagination AFTER grouping
     const paginated = allBookings.slice(offset, offset + limit);
 
-    // ✅ Total count (for frontend)
     const total = allBookings.length;
 
     return {
