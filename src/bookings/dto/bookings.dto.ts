@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -7,6 +8,7 @@ import {
   IsEnum,
   IsInt,
   IsNumber,
+  IsOptional,
 } from 'class-validator';
 
 export enum ClassType {
@@ -46,4 +48,22 @@ export class CreateBookingDto {
   })
   @IsNumber()
   totalAmount!: number;
+}
+
+export class PaginationDto {
+  @ApiProperty({
+    example: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  page?: number = 1;
+
+  @ApiProperty({
+    example: 10,
+  })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  limit?: number = 10;
 }

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -220,5 +222,135 @@ export class BookingsService {
       await conn.rollback();
       throw err;
     }
+  }
+
+  async getBookingsList(params: {
+    userId: number;
+    status: 'UPCOMING' | 'ALL' | 'PENDING';
+    page: number;
+    limit: number;
+  }) {
+    const { userId, status, page, limit } = params;
+
+    const offset = (page - 1) * limit;
+
+    console.log(params);
+
+    // ✅ Dynamic WHERE condition
+    let extraCondition = '';
+
+    if (status === 'UPCOMING') {
+      extraCondition = `AND b.status = 'CONFIRMED' AND (b.journey_date > CURDATE() OR (b.journey_date = CURDATE() AND s.departure_time > CURTIME()))`;
+    } else if (status === 'PENDING') {
+      extraCondition = `AND b.status = 'PENDING'`;
+    }
+
+    // ✅ Main query (IMPORTANT: no LIMIT here for grouping correctness)
+    const [rows]: any = await db.query(
+      `
+      SELECT 
+        b.booking_id,
+        b.total_amount,
+        b.status AS booking_status,
+        b.journey_date,
+        b.class_type,
+
+        u.user_id,
+        u.name,
+
+        t.train_name,
+        t.train_number,
+
+        s.departure_time,
+        s.arrival_time,
+
+        st1.station_name AS source,
+        st2.station_name AS destination,
+
+        tc.coach_label,
+        se.seat_number,
+
+        p.status AS payment_status,
+        p.transaction_id
+
+      FROM bookings b
+      JOIN users u ON u.user_id = b.user_id
+      JOIN schedules s ON s.schedule_id = b.schedule_id
+      JOIN trains t ON t.train_id = s.train_id
+      JOIN routes r ON r.route_id = s.route_id
+      JOIN stations st1 ON st1.station_id = r.source_station_id
+      JOIN stations st2 ON st2.station_id = r.destination_station_id
+
+      JOIN booking_seats bs ON bs.booking_id = b.booking_id
+      JOIN seats se ON se.seat_id = bs.seat_id
+      JOIN train_coaches tc ON tc.coach_id = se.coach_id
+
+      LEFT JOIN payments p ON p.booking_id = b.booking_id
+
+      WHERE b.user_id = ?
+      ${extraCondition}
+
+      ORDER BY b.created_at DESC
+      `,
+      [userId],
+    );
+
+    // ✅ Group by booking_id
+    const map = new Map<number, any>();
+
+    for (const row of rows) {
+      if (!map.has(row.booking_id)) {
+        map.set(row.booking_id, {
+          bookingId: row.booking_id,
+          user: {
+            user_id: row.user_id,
+            name: row.name,
+          },
+          train: {
+            train_name: row.train_name,
+            train_number: row.train_number,
+          },
+          route: {
+            from: row.source,
+            to: row.destination,
+          },
+          schedule: {
+            departure_time: row.departure_time,
+            arrival_time: row.arrival_time,
+            journey_date: row.journey_date,
+          },
+          seats: [],
+          class_type: row.class_type,
+          total_amount: row.total_amount,
+          booking_status: row.booking_status,
+          payment: {
+            status: row.payment_status || 'PENDING',
+            transaction_id: row.transaction_id || null,
+          },
+        });
+      }
+
+      map
+        .get(row.booking_id)
+        .seats.push(`${row.coach_label}-${row.seat_number}`);
+    }
+
+    const allBookings = Array.from(map.values());
+
+    // ✅ Pagination AFTER grouping
+    const paginated = allBookings.slice(offset, offset + limit);
+
+    // ✅ Total count (for frontend)
+    const total = allBookings.length;
+
+    return {
+      data: paginated,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

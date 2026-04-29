@@ -6,13 +6,14 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { GetUser } from 'src/libs/get.user.decorator';
 import { BookingsService } from './bookings.service';
-import { CreateBookingDto } from './dto/bookings.dto';
+import { CreateBookingDto, PaginationDto } from './dto/bookings.dto';
 @ApiTags('Bookings')
 @UseGuards(AuthGuard)
 @Controller('bookings')
@@ -24,6 +25,25 @@ export class BookingsController {
   async createBooking(@Body() dto: CreateBookingDto, @GetUser() user) {
     const userId = user?.user_id as number;
     return this.bookingsService.createBooking(dto, userId);
+  }
+
+  @Get('/list')
+  @ApiOperation({ summary: 'Get user bookings with filter & pagination' })
+  async getBookingsList(
+    @Query('status') status: 'UPCOMING' | 'ALL' | 'PENDING' = 'ALL',
+    @Query() query: PaginationDto,
+    @GetUser() user,
+  ) {
+    const userId = user?.user_id as number;
+
+    console.log('RAW QUERY:', query);
+
+    return this.bookingsService.getBookingsList({
+      userId,
+      status,
+      page: query.page || 1,
+      limit: query.limit || 10,
+    });
   }
 
   @Get('/:bookingId')

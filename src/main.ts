@@ -24,7 +24,6 @@ async function bootstrap() {
   });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
-
   const config = new DocumentBuilder()
     .setTitle('SMART-RAIL API')
     .setDescription('Railway Ticket System')
