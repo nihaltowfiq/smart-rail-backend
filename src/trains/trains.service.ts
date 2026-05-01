@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
@@ -40,68 +41,68 @@ export class TrainsService {
     const dayOfWeek = getDayOfWeek(dto.date);
 
     const query = `
-    SELECT 
-      t.train_id,
-      t.train_name,
-      t.train_number,
-      s.schedule_id,
-      s.departure_time,
-      s.arrival_time,
-      src.station_name AS from_station,
-      dest.station_name AS to_station,
-      tc.class_type,
+      SELECT 
+        t.train_id,
+        t.train_name,
+        t.train_number,
+        s.schedule_id,
+        s.departure_time,
+        s.arrival_time,
+        src.station_name AS from_station,
+        dest.station_name AS to_station,
+        tc.class_type,
 
-      MAX(r.distance_km * fr.price_per_km) AS fare,
+        MAX(r.distance_km * fr.price_per_km) AS fare,
 
-      COUNT(DISTINCT st.seat_id) AS total_seat_count,
+        COUNT(DISTINCT st.seat_id) AS total_seat_count,
 
-      COUNT(DISTINCT st.seat_id) - COUNT(DISTINCT bs.seat_id) AS total_available_seats_count
+        COUNT(DISTINCT st.seat_id) - COUNT(DISTINCT bs.seat_id) AS total_available_seats_count
 
-    FROM schedules s
-    JOIN trains t ON t.train_id = s.train_id
-    JOIN routes r ON r.route_id = s.route_id
-    JOIN stations src ON src.station_id = r.source_station_id
-    JOIN stations dest ON dest.station_id = r.destination_station_id
+      FROM schedules s
+      JOIN trains t ON t.train_id = s.train_id
+      JOIN routes r ON r.route_id = s.route_id
+      JOIN stations src ON src.station_id = r.source_station_id
+      JOIN stations dest ON dest.station_id = r.destination_station_id
 
-    JOIN train_running_days trd 
-      ON trd.train_id = t.train_id
+      JOIN train_running_days trd 
+        ON trd.train_id = t.train_id
 
-    JOIN train_coaches tc 
-      ON tc.train_id = t.train_id
+      JOIN train_coaches tc 
+        ON tc.train_id = t.train_id
 
-    JOIN seats st 
-      ON st.coach_id = tc.coach_id
+      JOIN seats st 
+        ON st.coach_id = tc.coach_id
 
-    JOIN fare_rules fr 
-      ON fr.class_type = tc.class_type
+      JOIN fare_rules fr 
+        ON fr.class_type = tc.class_type
 
-    LEFT JOIN booking_seats bs 
-      ON bs.seat_id = st.seat_id
+      LEFT JOIN booking_seats bs 
+        ON bs.seat_id = st.seat_id
 
-    LEFT JOIN bookings b 
-      ON b.booking_id = bs.booking_id
-      AND b.schedule_id = s.schedule_id
-      AND b.journey_date = ?
-      AND b.status = 'CONFIRMED'
+      LEFT JOIN bookings b 
+        ON b.booking_id = bs.booking_id
+        AND b.schedule_id = s.schedule_id
+        AND b.journey_date = ?
+        AND b.status = 'CONFIRMED'
 
-    WHERE 
-      src.city = ?
-      AND dest.city = ?
-      AND trd.day_of_week = ?
-      AND trd.is_off = FALSE
-      AND tc.class_type = ?
+      WHERE 
+        src.city = ?
+        AND dest.city = ?
+        AND trd.day_of_week = ?
+        AND trd.is_off = FALSE
+        AND tc.class_type = ?
 
-    GROUP BY 
-      t.train_id,
-      t.train_name,
-      t.train_number,
-      s.schedule_id,
-      s.departure_time,
-      s.arrival_time,
-      src.station_name,
-      dest.station_name,
-      tc.class_type
-  `;
+      GROUP BY 
+        t.train_id,
+        t.train_name,
+        t.train_number,
+        s.schedule_id,
+        s.departure_time,
+        s.arrival_time,
+        src.station_name,
+        dest.station_name,
+        tc.class_type
+    `;
 
     return this.db.query(query, [
       dto.date,

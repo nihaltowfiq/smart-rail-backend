@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS payments (
   amount         DECIMAL(10,2),
   status         ENUM('SUCCESS','FAILED','PENDING') DEFAULT 'PENDING',
   payment_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  payment_method ENUM('BKASH', 'NAGAD'),
   FOREIGN KEY (booking_id) REFERENCES bookings(booking_id)
 );
 

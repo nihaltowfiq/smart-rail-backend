@@ -14,6 +14,7 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { GetUser } from 'src/libs/get.user.decorator';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto, PaginationDto } from './dto/bookings.dto';
+import { MakePaymentDto } from './dto/make-payment.dto';
 @ApiTags('Bookings')
 @UseGuards(AuthGuard)
 @Controller('bookings')
@@ -54,7 +55,10 @@ export class BookingsController {
 
   @Post('/payment/:bookingId')
   @ApiOperation({ summary: 'Make payment for a booking' })
-  async makePayment(@Param('bookingId', ParseIntPipe) bookingId: number) {
-    return this.bookingsService.makePayment(bookingId);
+  async makePayment(
+    @Param('bookingId', ParseIntPipe) bookingId: number,
+    @Body() dto: MakePaymentDto,
+  ) {
+    return this.bookingsService.makePayment(bookingId, dto.payment_method);
   }
 }

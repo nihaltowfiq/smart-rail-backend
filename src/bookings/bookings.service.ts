@@ -99,7 +99,8 @@ export class BookingsService {
           se.seat_number,
 
           p.status AS payment_status,
-          p.transaction_id
+          p.transaction_id,
+          p.payment_method
 
         FROM bookings b
         JOIN users u ON u.user_id = b.user_id
@@ -122,36 +123,37 @@ export class BookingsService {
 
     if (rows.length === 0) throw new NotFoundException('Booking not found');
 
-    const first = rows[0];
+    const booking = rows[0];
 
     const seats = rows.map((r: any) => `${r.coach_label}-${r.seat_number}`);
 
     return {
-      bookingId: first.booking_id,
+      bookingId: booking.booking_id,
       user: {
-        user_id: first.user_id,
-        name: first.name,
+        user_id: booking.user_id,
+        name: booking.name,
       },
       train: {
-        train_name: first.train_name,
-        train_number: first.train_number,
+        train_name: booking.train_name,
+        train_number: booking.train_number,
       },
       route: {
-        from: first.source,
-        to: first.destination,
+        from: booking.source,
+        to: booking.destination,
       },
       schedule: {
-        departure_time: first.departure_time,
-        arrival_time: first.arrival_time,
-        journey_date: first.journey_date,
+        departure_time: booking.departure_time,
+        arrival_time: booking.arrival_time,
+        journey_date: booking.journey_date,
       },
       seats,
-      class_type: first.class_type,
-      total_amount: first.total_amount,
-      booking_status: first.booking_status,
+      class_type: booking.class_type,
+      total_amount: booking.total_amount,
+      booking_status: booking.booking_status,
       payment: {
-        status: first.payment_status || 'PENDING',
-        transaction_id: first.transaction_id || null,
+        status: booking.payment_status || 'PENDING',
+        transaction_id: booking.transaction_id || null,
+        payment_method: booking.payment_method || null,
       },
     };
   }
@@ -161,7 +163,7 @@ export class BookingsService {
     return `trnx${random}`;
   }
 
-  async makePayment(bookingId: number) {
+  async makePayment(bookingId: number, paymentMethod: string) {
     const conn = await db.getConnection();
     await conn.beginTransaction();
 
@@ -189,18 +191,18 @@ export class BookingsService {
         await conn.query(
           `
             UPDATE payments
-            SET transaction_id = ?, status = 'SUCCESS'
+            SET transaction_id = ?, status = 'SUCCESS', payment_method = ?
             WHERE booking_id = ?
           `,
-          [transactionId, bookingId],
+          [transactionId, paymentMethod, bookingId],
         );
       } else {
         await conn.query(
           `
-            INSERT INTO payments (booking_id, transaction_id, amount, status)
-            VALUES (?, ?, ?, 'SUCCESS')
+            INSERT INTO payments (booking_id, transaction_id, amount, status, payment_method)
+            VALUES (?, ?, ?, 'SUCCESS', ?)
           `,
-          [bookingId, transactionId, booking.total_amount],
+          [bookingId, transactionId, booking.total_amount, paymentMethod],
         );
       }
 
@@ -234,8 +236,6 @@ export class BookingsService {
 
     const offset = (page - 1) * limit;
 
-    console.log(params);
-
     let extraCondition = '';
 
     if (status === 'UPCOMING') {
@@ -246,49 +246,50 @@ export class BookingsService {
 
     const [rows]: any = await db.query(
       `
-      SELECT 
-        b.booking_id,
-        b.total_amount,
-        b.status AS booking_status,
-        b.journey_date,
-        b.class_type,
+        SELECT 
+          b.booking_id,
+          b.total_amount,
+          b.status AS booking_status,
+          b.journey_date,
+          b.class_type,
 
-        u.user_id,
-        u.name,
+          u.user_id,
+          u.name,
 
-        t.train_name,
-        t.train_number,
+          t.train_name,
+          t.train_number,
 
-        s.departure_time,
-        s.arrival_time,
+          s.departure_time,
+          s.arrival_time,
 
-        st1.station_name AS source,
-        st2.station_name AS destination,
+          st1.station_name AS source,
+          st2.station_name AS destination,
 
-        tc.coach_label,
-        se.seat_number,
+          tc.coach_label,
+          se.seat_number,
 
-        p.status AS payment_status,
-        p.transaction_id
+          p.status AS payment_status,
+          p.transaction_id,
+          p.payment_method
 
-      FROM bookings b
-      JOIN users u ON u.user_id = b.user_id
-      JOIN schedules s ON s.schedule_id = b.schedule_id
-      JOIN trains t ON t.train_id = s.train_id
-      JOIN routes r ON r.route_id = s.route_id
-      JOIN stations st1 ON st1.station_id = r.source_station_id
-      JOIN stations st2 ON st2.station_id = r.destination_station_id
+        FROM bookings b
+        JOIN users u ON u.user_id = b.user_id
+        JOIN schedules s ON s.schedule_id = b.schedule_id
+        JOIN trains t ON t.train_id = s.train_id
+        JOIN routes r ON r.route_id = s.route_id
+        JOIN stations st1 ON st1.station_id = r.source_station_id
+        JOIN stations st2 ON st2.station_id = r.destination_station_id
 
-      JOIN booking_seats bs ON bs.booking_id = b.booking_id
-      JOIN seats se ON se.seat_id = bs.seat_id
-      JOIN train_coaches tc ON tc.coach_id = se.coach_id
+        JOIN booking_seats bs ON bs.booking_id = b.booking_id
+        JOIN seats se ON se.seat_id = bs.seat_id
+        JOIN train_coaches tc ON tc.coach_id = se.coach_id
 
-      LEFT JOIN payments p ON p.booking_id = b.booking_id
+        LEFT JOIN payments p ON p.booking_id = b.booking_id
 
-      WHERE b.user_id = ?
-      ${extraCondition}
+        WHERE b.user_id = ?
+        ${extraCondition}
 
-      ORDER BY b.created_at DESC
+        ORDER BY b.created_at DESC
       `,
       [userId],
     );
@@ -323,6 +324,7 @@ export class BookingsService {
           payment: {
             status: row.payment_status || 'PENDING',
             transaction_id: row.transaction_id || null,
+            payment_method: row.payment_method || null,
           },
         });
       }
