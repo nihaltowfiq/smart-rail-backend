@@ -16,7 +16,6 @@ export class AdminService {
     const limit = filter.limit || 10;
     const offset = (page - 1) * limit;
 
-    // Build date filter based on incomeFilter parameter
     let dateFilter = '';
     const params: any[] = [];
 
@@ -36,9 +35,7 @@ export class AdminService {
       dateFilter = `AND YEAR(b.created_at) = ? AND MONTH(b.created_at) = ?`;
       params.push(year, month);
     }
-    // For ALL_TIME, dateFilter remains empty
 
-    // Build search filters
     let searchFilter = '';
     if (filter.trainName) {
       searchFilter += ` AND t.train_name LIKE ?`;
@@ -49,7 +46,6 @@ export class AdminService {
       params.push(`%${filter.trainNumber}%`);
     }
 
-    // Get total count
     const countQuery = `
       SELECT COUNT(DISTINCT t.train_id) as total
       FROM trains t
@@ -66,7 +62,6 @@ export class AdminService {
     const total = countResult[0]?.total || 0;
     const pages = Math.ceil(total / limit);
 
-    // Build sort clause
     const sortBy = filter.sortBy || 'name';
     const sortOrder = filter.sortOrder || 'ASC';
     let orderBy = 'ORDER BY t.train_name ASC';
@@ -81,7 +76,6 @@ export class AdminService {
       orderBy = `ORDER BY t.train_name ${sortOrder}`;
     }
 
-    // Main query with pagination
     const query = `
       SELECT 
         t.train_id,
